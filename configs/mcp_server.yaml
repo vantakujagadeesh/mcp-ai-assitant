@@ -9,7 +9,11 @@ model:
   name: "unsloth/Meta-Llama-3.1-8B-Instruct-bnb-4bit"
   max_seq_length: 2048
   load_in_4bit: true
-  # lora_path: "./results/models/finetuned-lora"   # set after fine-tuning
+  # Path to fine-tuned LoRA adapters.
+  # - Local path: "./results/models/finetuned-lora"
+  # - Hugging Face Hub: "your-username/llama-support-lora"
+  # Leave commented out or set to null to use the base model without adapters.
+  lora_path: null
 
 rag:
   # kb_path: null   → defaults to data/knowledge_base/support_articles.jsonl

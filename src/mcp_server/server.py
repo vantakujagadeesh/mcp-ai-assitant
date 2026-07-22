@@ -124,13 +124,23 @@ class SupportAssistant:
                 load_in_4bit=model_cfg.get("load_in_4bit", True),
             )
 
-            if lora_path and os.path.exists(lora_path):
-                logger.info("Loading LoRA adapters from %s", lora_path)
-                from unsloth import FastLanguageModel as FLM
+            if lora_path:
+                # HF Hub paths look like "username/repo-name" — exactly one slash, no leading . or /
+is_hub_path = lora_path.count("/") == 1 and not lora_path.startswith(('.', '/'))
+                is_local_path = os.path.exists(lora_path)
 
-                self.model = FLM.from_pretrained(
-                    self.model, lora_path
-                )
+                if is_hub_path or is_local_path:
+                    logger.info("Loading LoRA adapters from %s", lora_path)
+                    from unsloth import FastLanguageModel as FLM
+
+                    self.model = FLM.from_pretrained(
+                        self.model, lora_path
+                    )
+                else:
+                    logger.warning(
+                        "LoRA path '%s' not found — running base model without adapters",
+                        lora_path,
+                    )
 
             # Enable inference mode
             from unsloth import FastLanguageModel as FLM
