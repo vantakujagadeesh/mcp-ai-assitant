@@ -9,9 +9,15 @@ import json
 import os
 import re
 import logging
+from concurrent.futures import ThreadPoolExecutor, TimeoutError
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# Timeout in seconds for embedding model loading.
+# If the model doesn't load within this window (e.g. SSL / network issues),
+# we fall back to keyword search so the server can start quickly.
+_EMBEDDING_MODEL_TIMEOUT = 15.0
 
 # ---------------------------------------------------------------------------
 # Optional: sentence-transformers for real embedding search
@@ -95,27 +101,68 @@ class KnowledgeBaseRetriever:
     # Index building
     # ------------------------------------------------------------------
     def _build_index(self) -> None:
-        """Pre-compute embeddings or prepare keyword index."""
+        """Pre-compute embeddings or prepare keyword index.
+
+        The embedding model is loaded with a timeout so that SSL / network
+        issues (common on macOS with LibreSSL) don't block server startup.
+        If the model fails to load, keyword search is used as fallback.
+        """
         if not self._articles:
             self._embeddings = None
             return
 
         if _SENTENCE_TRANSFORMERS_AVAILABLE and _NUMPY_AVAILABLE:
+            logger.info(
+                "Loading embedding model '%s' (timeout: %ss) …",
+                self._model_name,
+                _EMBEDDING_MODEL_TIMEOUT,
+            )
+
+            def _load() -> None:
+                try:
+                    model = SentenceTransformer(self._model_name)
+                    texts = [
+                        a.get("title", "") + "\n" + a.get("content", "")
+                        for a in self._articles
+                    ]
+                    embeddings = model.encode(
+                        texts, show_progress_bar=False, normalize_embeddings=True
+                    )
+                    self._model = model
+                    self._embeddings = embeddings
+                except Exception as exc:
+                    logger.warning("Embedding loading failed in thread: %s", exc)
+
+            # Use a thread with a timeout so SSL/network hangs don't
+            # block server startup. We must shutdown(wait=False) to avoid
+            # waiting for a potentially stuck thread when exiting the scope.
+            pool = ThreadPoolExecutor(max_workers=1)
             try:
-                logger.info("Loading embedding model: %s", self._model_name)
-                self._model = SentenceTransformer(self._model_name)
-                texts = [
-                    a.get("title", "") + "\n" + a.get("content", "")
-                    for a in self._articles
-                ]
-                self._embeddings = self._model.encode(
-                    texts, show_progress_bar=False, normalize_embeddings=True
-                )
-                logger.info("Computed embeddings for %d articles", len(texts))
-            except Exception as exc:
-                logger.warning("Embedding model failed (%s), using keyword fallback", exc)
-                self._model = None
-                self._embeddings = None
+                future = pool.submit(_load)
+                try:
+                    future.result(timeout=_EMBEDDING_MODEL_TIMEOUT)
+                    if self._embeddings is not None:
+                        logger.info(
+                            "Computed embeddings for %d articles",
+                            len(self._articles),
+                        )
+                except TimeoutError:
+                    logger.warning(
+                        "Embedding model loading timed out after %ss — "
+                        "using keyword fallback",
+                        _EMBEDDING_MODEL_TIMEOUT,
+                    )
+                    self._model = None
+                    self._embeddings = None
+                except Exception as exc:
+                    logger.warning(
+                        "Embedding model failed (%s) — using keyword fallback", exc
+                    )
+                    self._model = None
+                    self._embeddings = None
+            finally:
+                # Don't block shutdown waiting for a potentially stuck thread
+                pool.shutdown(wait=False, cancel_futures=True)
         else:
             logger.info(
                 "sentence-transformers unavailable — using keyword fallback search"

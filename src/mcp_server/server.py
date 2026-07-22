@@ -126,7 +126,7 @@ class SupportAssistant:
 
             if lora_path:
                 # HF Hub paths look like "username/repo-name" — exactly one slash, no leading . or /
-is_hub_path = lora_path.count("/") == 1 and not lora_path.startswith(('.', '/'))
+                is_hub_path = lora_path.count("/") == 1 and not lora_path.startswith(('.', '/'))
                 is_local_path = os.path.exists(lora_path)
 
                 if is_hub_path or is_local_path:
