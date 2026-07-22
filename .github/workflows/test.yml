@@ -31,10 +31,12 @@ jobs:
 
       - name: Lint with flake8
         run: |
-          flake8 src/ --count --max-complexity=15 --max-line-length=100 \
-            --statistics --show-source --ignore=E203,W503,E704
+          flake8 . --count --max-complexity=15 --max-line-length=100 \
+            --statistics --show-source --ignore=E203,W503,E704 \
+            --exclude=.git,__pycache__,venv,results,data,notebooks,n8n_workflows,configs
 
   test:
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
