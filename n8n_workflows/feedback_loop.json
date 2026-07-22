@@ -1,0 +1,137 @@
+{
+  "name": "Feedback Capture Loop (Filtered)",
+  "pinData": {},
+  "nodes": [
+    {
+      "name": "Webhook (Feedback Inbound)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback-inbound",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "name": "Should Log?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [450, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-thumbs-down",
+              "leftValue": "={{ $json.body.rating }}",
+              "rightValue": "thumbs_down",
+              "operator": {
+                "type": "string",
+                "operation": "equal"
+              }
+            },
+            {
+              "id": "cond-low-confidence",
+              "leftValue": "={{ $json.body.confidence }}",
+              "rightValue": 0.5,
+              "operator": {
+                "type": "number",
+                "operation": "smaller"
+              }
+            }
+          ],
+          "combinator": "or"
+        }
+      }
+    },
+    {
+      "name": "Log Feedback to REST API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/feedback_log",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ $node[\"Webhook (Feedback Inbound)\"].json.body }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Respond (Logged)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [850, 200],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"status\": \"logged\",\n  \"ticket_id\": $node[\"Webhook (Feedback Inbound)\"].json.body.ticket_id,\n  \"rating\": $node[\"Webhook (Feedback Inbound)\"].json.body.rating,\n  \"filter_reason\": \"low_confidence_or_thumbs_down\"\n} }}"
+      }
+    },
+    {
+      "name": "Respond (Skipped)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [650, 500],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"status\": \"skipped\",\n  \"ticket_id\": $node[\"Webhook (Feedback Inbound)\"].json.body.ticket_id,\n  \"rating\": $node[\"Webhook (Feedback Inbound)\"].json.body.rating,\n  \"reason\": \"high_confidence_thumbs_up - not valuable for retraining\"\n} }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook (Feedback Inbound)": {
+      "main": [
+        [
+          {
+            "node": "Should Log?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Log?": {
+      "main": [
+        [
+          {
+            "node": "Log Feedback to REST API",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond (Skipped)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Feedback to REST API": {
+      "main": [
+        [
+          {
+            "node": "Respond (Logged)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

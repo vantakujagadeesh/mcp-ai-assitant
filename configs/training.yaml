@@ -1,0 +1,52 @@
+# QLoRA Fine-Tuning Configuration
+base_model: "unsloth/Llama-3.1-8B-Instruct-bnb-4bit"
+# Alternative: "unsloth/Qwen2.5-7B-Instruct-bnb-4bit"
+
+# LoRA Configuration
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.0
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+  use_rslora: true
+
+# Training Arguments
+training:
+  per_device_train_batch_size: 2
+  gradient_accumulation_steps: 4
+  warmup_steps: 5
+  max_steps: 500
+  learning_rate: 2.0e-4
+  optim: "adamw_8bit"
+  weight_decay: 0.01
+  lr_scheduler_type: "linear"
+  seed: 3407
+  output_dir: "../results/models/checkpoints"
+  report_to: "none"
+  ddp_find_unused_parameters: false
+  gradient_checkpointing: true
+  logging_steps: 10
+  save_steps: 100
+  max_seq_length: 2048
+
+# Dataset
+dataset:
+  - "bitext/Bitext-customer-support-llm-chatbot-training-dataset"
+  - "6StringNinja/synthetic-servicenow-incidents"
+  - "coldstart88/triageiq-dataset"
+  train_test_split: 0.9
+  max_train_samples: 10000
+  max_eval_samples: 500
+
+# Evaluation
+eval:
+  batch_size: 4
+  max_new_tokens: 256
+  temperature: 0.7

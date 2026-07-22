@@ -1,0 +1,28 @@
+# MCP AI Assistant — Python Dependencies
+# ======================================
+
+# ---- REST API (required) ----
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.0.0
+
+# ---- RAG (required for /api/search_kb) ----
+sentence-transformers>=3.0.0
+numpy>=1.24.0
+
+# ---- Model loading (required for classification / generation) ----
+# unsloth    # uncomment when running in Colab with GPU
+# torch      # uncomment when running in Colab with GPU
+# transformers>=4.44.0
+# accelerate>=0.29.0
+# bitsandbytes>=0.43.0
+# trl>=0.9.0
+# datasets>=2.16.0
+# peft>=0.10.0
+
+# ---- Config parsing (optional) ----
+PyYAML>=6.0
+
+# ---- Development / testing ----
+pytest>=8.0.0
+httpx>=0.27.0      # for TestClient

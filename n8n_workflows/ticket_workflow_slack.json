@@ -1,0 +1,220 @@
+{
+  "name": "Support Ticket Pipeline + Slack Alert",
+  "pinData": {},
+  "nodes": [
+    {
+      "name": "Webhook (Inbound Ticket)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket-inbound",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "name": "Classify Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [450, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/classify_ticket",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket_text",
+              "value": "={{ $node[\"Webhook (Inbound Ticket)\"].json.body.ticket_text }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Search Knowledge Base",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [650, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/search_kb",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $node[\"Webhook (Inbound Ticket)\"].json.body.ticket_text }}"
+            },
+            {
+              "name": "top_k",
+              "value": "3"
+            },
+            {
+              "name": "category_filter",
+              "value": "={{ $json.category }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Generate Response",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [850, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/generate_response",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket_text",
+              "value": "={{ $node[\"Webhook (Inbound Ticket)\"].json.body.ticket_text }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $node[\"Classify Ticket\"].json.category }}"
+            },
+            {
+              "name": "urgency",
+              "value": "={{ $node[\"Classify Ticket\"].json.urgency }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Resolve Ticket",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/resolve_ticket",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket_text",
+              "value": "={{ $node[\"Webhook (Inbound Ticket)\"].json.body.ticket_text }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $node[\"Classify Ticket\"].json.category }}"
+            },
+            {
+              "name": "urgency",
+              "value": "={{ $node[\"Classify Ticket\"].json.urgency }}"
+            },
+            {
+              "name": "resolution_notes",
+              "value": "={{ $node[\"Generate Response\"].json.response }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [1250, 150],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channelId": "={{ $parameter['channelId'] || '#support-tickets' }}",
+        "text": "=🚨 *New Ticket Resolved*\n*Ticket ID:* {{ $json.ticket_id }}\n*Category:* {{ $node[\"Classify Ticket\"].json.category }}\n*Urgency:* {{ $node[\"Classify Ticket\"].json.urgency }}\n*Summary:* {{ $json.summary }}\n*Response:* {{ truncate($node[\"Generate Response\"].json.response, 200) }}"
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack"
+        }
+      }
+    },
+    {
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 450],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"ticket_id\": $json.ticket_id,\n  \"category\": $node[\"Classify Ticket\"].json.category,\n  \"urgency\": $node[\"Classify Ticket\"].json.urgency,\n  \"response\": $node[\"Generate Response\"].json.response,\n  \"kb_results\": $node[\"Search Knowledge Base\"].json.results,\n  \"status\": $json.status\n} }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook (Inbound Ticket)": {
+      "main": [
+        [
+          {
+            "node": "Classify Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Ticket": {
+      "main": [
+        [
+          {
+            "node": "Search Knowledge Base",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search Knowledge Base": {
+      "main": [
+        [
+          {
+            "node": "Generate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Response": {
+      "main": [
+        [
+          {
+            "node": "Resolve Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Ticket": {
+      "main": [
+        [
+          {
+            "node": "Slack Notification",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,150 @@
+{
+  "name": "Feedback Capture & Retraining Log",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "feedback",
+        "options": {}
+      },
+      "id": "webhook-feedback",
+      "name": "Feedback Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "feedback-capture"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body.rating }}",
+              "operation": "equal",
+              "value2": "thumbs_down"
+            }
+          ]
+        }
+      },
+      "id": "check-rating",
+      "name": "Is Negative Feedback?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_RETRAINING_SHEET_ID",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket_id": "={{ $json.body.ticket_id }}",
+            "ticket_text": "={{ $json.body.ticket_text }}",
+            "category": "={{ $json.body.category }}",
+            "urgency": "={{ $json.body.urgency }}",
+            "generated_response": "={{ $json.body.response }}",
+            "rating": "={{ $json.body.rating }}",
+            "user_feedback_text": "={{ $json.body.feedback_text }}",
+            "confidence_score": "={{ $json.body.confidence }}",
+            "needs_review": "={{ $json.body.confidence < 0.6 || $json.body.rating === 'thumbs_down' }}",
+            "timestamp": "={{ $now.toISOString() }}"
+          }
+        }
+      },
+      "id": "log-feedback",
+      "name": "Log Feedback to Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "subject": "Low Confidence Response Needs Review - Ticket {{ $json.body.ticket_id }}",
+        "text": "A response needs human review:\n\nTicket: {{ $json.body.ticket_text }}\n\nGenerated Response: {{ $json.body.response }}\n\nConfidence: {{ $json.body.confidence }}\n\nUser Feedback: {{ $json.body.feedback_text }}\n\nPlease review and update the response.",
+        "toEmail": "support-review@company.com"
+      },
+      "id": "notify-review",
+      "name": "Notify Review Team",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [650, 450]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/feedback_log",
+        "options": {
+          "timeout": 10000
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{ $json.body }}"
+            }
+          ]
+        }
+      },
+      "id": "log-retraining-data",
+      "name": "Log Retraining Data (REST API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300]
+    }
+  ],
+  "connections": {
+    "Feedback Webhook": {
+      "main": [
+        [
+          {
+            "node": "Is Negative Feedback?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Negative Feedback?": {
+      "main": [
+        [
+          {
+            "node": "Log Feedback to Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Notify Review Team",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Feedback to Sheet",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Log Feedback to Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Retraining Data (REST API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "2.0.0",
+  "active": false,
+  "settings": {},
+  "tags": ["feedback", "mlops", "retraining"],
+  "description": "Captures user 👍/👎 feedback on generated responses, logs low-confidence outputs for human review and future retraining data via the REST API."
+}

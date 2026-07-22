@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+*.whl
+
+# Virtual environments
+venv/
+.venv/
+unsloth_env/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+*.sav
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Project data (generated, not source)
+data/feedback/
+data/processed/
+data/raw/
+data/datasets/
+
+# Large model files (tracked in HF Hub, not git)
+results/models/
+results/benchmarks/
+results/figures/
+
+# Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+.env
+.env.local
+
+# Hugging Face cache
+.cache/
+
+# Python packages
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Jupyter
+*.ipynb_checkpoints/
+
+# Logs
+*.log

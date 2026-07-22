@@ -1,0 +1,204 @@
+{
+  "name": "Support Ticket Processing Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket-inbound",
+        "options": {}
+      },
+      "id": "webhook-input",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [250, 300],
+      "webhookId": "support-ticket-inbound"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/api/classify_ticket",
+        "options": {},
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket_text",
+              "value": "={{ $json.body.ticket_text }}"
+            }
+          ]
+        }
+      },
+      "id": "classify-ticket",
+      "name": "Classify Ticket (REST API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.urgency }}",
+              "operation": "contains",
+              "value2": "Critical"
+            }
+          ]
+        }
+      },
+      "id": "check-urgency",
+      "name": "Is Critical?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [650, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/api/generate_response",
+        "options": {},
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "ticket_text",
+              "value": "={{ $json.body.ticket_text }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.category }}"
+            }
+          ]
+        }
+      },
+      "id": "generate-response",
+      "name": "Generate Response (REST API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [850, 300]
+    },
+    {
+      "parameters": {
+        "subject": "URGENT: Critical Support Ticket - {{ $json.ticket_id }}",
+        "text": "A critical ticket has been received:\n\nTicket: {{ $json.body.ticket_text }}\n\nCategory: {{ $json.category }}\n\nUrgency: {{ $json.urgency }}\n\nResponse: {{ $json.response }}",
+        "toEmail": "escalations@company.com"
+      },
+      "id": "send-escalation",
+      "name": "Send Escalation Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [850, 450]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "sheetId": "YOUR_SHEET_ID",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket_id": "={{ $json.ticket_id }}",
+            "ticket_text": "={{ $json.body.ticket_text }}",
+            "category": "={{ $json.category }}",
+            "urgency": "={{ $json.urgency }}",
+            "response": "={{ $json.response }}",
+            "status": "Processed",
+            "timestamp": "={{ $now.toISOString() }}"
+          }
+        }
+      },
+      "id": "log-to-sheet",
+      "name": "Log to Spreadsheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [1050, 300]
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:8000/api/search_kb",
+        "options": {},
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "query",
+              "value": "={{ $json.body.ticket_text }}"
+            }
+          ]
+        }
+      },
+      "id": "search-kb",
+      "name": "Search Knowledge Base (REST API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [450, 500]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Classify Ticket (REST API)",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search Knowledge Base (REST API)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Classify Ticket (REST API)": {
+      "main": [
+        [
+          {
+            "node": "Is Critical?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Critical?": {
+      "main": [
+        [
+          {
+            "node": "Generate Response (REST API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Escalation Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Generate Response (REST API)",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Generate Response (REST API)": {
+      "main": [
+        [
+          {
+            "node": "Log to Spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "versionId": "2.0.0",
+  "active": false,
+  "settings": {},
+  "tags": ["support", "rest-api", "ai"],
+  "description": "Receives support tickets via webhook, classifies via REST API (/api/classify_ticket), generates a response (/api/generate_response), escalates critical tickets, and logs results to a spreadsheet."
+}
