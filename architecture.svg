@@ -1,0 +1,222 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" font-family="'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0f172a;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#1e293b;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="userBox" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#4f46e5"/>
+    </linearGradient>
+    <linearGradient id="coreBox" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b"/>
+      <stop offset="100%" style="stop-color:#d97706"/>
+    </linearGradient>
+    <linearGradient id="ragBox" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#10b981"/>
+      <stop offset="100%" style="stop-color:#059669"/>
+    </linearGradient>
+    <linearGradient id="modelBox" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+    <linearGradient id="n8nBox" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ef4444"/>
+      <stop offset="100%" style="stop-color:#dc2626"/>
+    </linearGradient>
+    <linearGradient id="fbBox" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#2563eb"/>
+    </linearGradient>
+
+    <!-- Drop shadows -->
+    <filter id="shadow" x="-5%" y="-5%" width="115%" height="120%">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+
+    <!-- Arrow markers -->
+    <marker id="arrowInput" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#a5b4fc"/>
+    </marker>
+    <marker id="arrowOutput" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#fcd34d"/>
+    </marker>
+    <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#6ee7b7"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#fca5a5"/>
+    </marker>
+    <marker id="arrowBlue" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#93c5fd"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1000" height="700" fill="url(#bg)" rx="12"/>
+
+  <!-- Title -->
+  <text x="500" y="38" text-anchor="middle" fill="#e2e8f0" font-size="20" font-weight="700" letter-spacing="0.5">MCP-Powered AI Assistant — Architecture</text>
+  <text x="500" y="56" text-anchor="middle" fill="#64748b" font-size="11" letter-spacing="0.3">Fine-tuned LLM · RAG Retrieval · n8n Workflow Automation · Feedback Loop</text>
+
+  <!-- ============================================ -->
+  <!-- LAYER 1: User / Input -->
+  <!-- ============================================ -->
+  <rect x="400" y="78" width="200" height="52" rx="26" fill="url(#userBox)" filter="url(#shadow)"/>
+  <text x="500" y="103" text-anchor="middle" fill="#fff" font-size="14" font-weight="600">👤  User / n8n Webhook</text>
+  <text x="500" y="119" text-anchor="middle" fill="#c7d2fe" font-size="10">HTTP POST — ticket query</text>
+
+  <!-- Arrow: User → MCP Core -->
+  <line x1="500" y1="130" x2="500" y2="168" stroke="#a5b4fc" stroke-width="2.5" marker-end="url(#arrowInput)" stroke-dasharray="5,3"/>
+
+  <!-- ============================================ -->
+  <!-- LAYER 2: MCP Core (FastAPI) -->
+  <!-- ============================================ -->
+  <rect x="280" y="175" width="440" height="58" rx="10" fill="url(#coreBox)" filter="url(#shadow)"/>
+  <text x="500" y="199" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">⚡  MCP Assistant — FastAPI REST Server</text>
+  <text x="500" y="215" text-anchor="middle" fill="#fde68a" font-size="10">/health · /api/classify_ticket · /api/search_kb · /api/generate_response · /api/resolve_ticket · /api/feedback_log</text>
+  <text x="500" y="227" text-anchor="middle" fill="#d97706" font-size="9">port 8000 · CORS enabled for n8n · Graceful degradation without GPU</text>
+
+  <!-- Arrow: Core → RAG -->
+  <line x1="310" y1="233" x2="215" y2="280" stroke="#6ee7b7" stroke-width="2" marker-end="url(#arrowGreen)"/>
+
+  <!-- Arrow: Core → Model -->
+  <line x1="500" y1="233" x2="500" y2="280" stroke="#fcd34d" stroke-width="2" marker-end="url(#arrowOutput)"/>
+
+  <!-- Arrow: Core → n8n -->
+  <line x1="690" y1="233" x2="775" y2="280" stroke="#fca5a5" stroke-width="2" marker-end="url(#arrowRed)"/>
+
+  <!-- Arrow: Core → Feedback (post-resolution, dashed) -->
+  <path d="M310,233 L270,340 Q240,400 240,465" stroke="#93c5fd" stroke-width="2" fill="none" stroke-dasharray="6,4" marker-end="url(#arrowBlue)"/>
+
+  <!-- ============================================ -->
+  <!-- LAYER 3: RAG (left) -->
+  <!-- ============================================ -->
+  <rect x="60" y="285" width="290" height="155" rx="10" fill="url(#ragBox)" filter="url(#shadow)"/>
+  <text x="205" y="310" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">📚  RAG Retriever</text>
+
+  <rect x="78" y="322" width="254" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="205" y="338" text-anchor="middle" fill="#d1fae5" font-size="10">Sentence Embeddings (dense cosine similarity)</text>
+
+  <rect x="78" y="352" width="254" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="205" y="368" text-anchor="middle" fill="#d1fae5" font-size="10">Keyword Search (TF overlap fallback)</text>
+
+  <rect x="78" y="382" width="254" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="205" y="398" text-anchor="middle" fill="#d1fae5" font-size="10">Category Filtering</text>
+
+  <text x="205" y="430" text-anchor="middle" fill="#a7f3d0" font-size="9">data/knowledge_base/ — 15 seed support articles (JSONL)</text>
+
+  <!-- ============================================ -->
+  <!-- LAYER 3: Fine-tuned LLM (center) -->
+  <!-- ============================================ -->
+  <rect x="390" y="285" width="220" height="155" rx="10" fill="url(#modelBox)" filter="url(#shadow)"/>
+  <text x="500" y="310" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">🧠  Fine-Tuned LLM</text>
+
+  <rect x="408" y="322" width="184" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="500" y="338" text-anchor="middle" fill="#ddd6fe" font-size="10">Llama 3.1 8B / Qwen2.5 7B</text>
+
+  <rect x="408" y="352" width="184" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="500" y="368" text-anchor="middle" fill="#ddd6fe" font-size="10">QLoRA · 4-bit NF4 Quantization</text>
+
+  <rect x="408" y="382" width="184" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="500" y="398" text-anchor="middle" fill="#ddd6fe" font-size="10">LoRA Rank 16 · Alpha 32</text>
+
+  <text x="500" y="430" text-anchor="middle" fill="#c4b5fd" font-size="9">Classify → Generate → Resolve</text>
+
+  <!-- Bi-directional context arrow: LLM ↔ RAG -->
+  <line x1="390" y1="362" x2="355" y2="362" stroke="#6ee7b7" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+  <text x="368" y="358" text-anchor="middle" fill="#6ee7b7" font-size="8">context</text>
+
+  <!-- ============================================ -->
+  <!-- LAYER 3: n8n Workflows (right) -->
+  <!-- ============================================ -->
+  <rect x="650" y="285" width="290" height="155" rx="10" fill="url(#n8nBox)" filter="url(#shadow)"/>
+  <text x="795" y="310" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">⚙️  n8n Workflow Engine</text>
+
+  <rect x="665" y="322" width="260" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="795" y="338" text-anchor="middle" fill="#fecaca" font-size="10">📧  Email Notification (SMTP)</text>
+
+  <rect x="665" y="352" width="260" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="795" y="368" text-anchor="middle" fill="#fecaca" font-size="10">💬  Slack Alert</text>
+
+  <rect x="665" y="382" width="260" height="24" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="795" y="398" text-anchor="middle" fill="#fecaca" font-size="10">📝  Ticket Resolution + Webhook Response</text>
+
+  <text x="795" y="430" text-anchor="middle" fill="#fca5a5" font-size="9">4 pre-built templates — import into n8n and connect credentials</text>
+
+  <!-- Arrow: RAG → Core (back) -->
+  <line x1="265" y1="440" x2="340" y2="487" stroke="#6ee7b7" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+
+  <!-- Arrow: Model → Core (back) -->
+  <line x1="500" y1="440" x2="500" y2="487" stroke="#fcd34d" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arrowOutput)"/>
+
+  <!-- Arrow: n8n → Core (back) -->
+  <line x1="735" y1="440" x2="660" y2="487" stroke="#fca5a5" stroke-width="1.5" fill="none" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/>
+
+  <!-- ============================================ -->
+  <!-- LAYER 4: MCP Core (response aggregation) -->
+  <!-- ============================================ -->
+  <rect x="280" y="494" width="440" height="46" rx="10" fill="url(#coreBox)" fill-opacity="0.7" filter="url(#shadow)"/>
+  <text x="500" y="514" text-anchor="middle" fill="#fff" font-size="12" font-weight="600">⚡  MCP Assistant — Aggregates Results</text>
+  <text x="500" y="530" text-anchor="middle" fill="#fde68a" font-size="10">Classification · KB Articles · Generated Response · Resolution Summary</text>
+
+  <!-- Arrow: Response → User -->
+  <line x1="500" y1="540" x2="500" y2="577" stroke="#fcd34d" stroke-width="2.5" marker-end="url(#arrowOutput)" stroke-dasharray="5,3"/>
+
+  <!-- ============================================ -->
+  <!-- LAYER 5: Output -->
+  <!-- ============================================ -->
+  <rect x="400" y="584" width="200" height="46" rx="23" fill="url(#userBox)" fill-opacity="0.7" filter="url(#shadow)"/>
+  <text x="500" y="604" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">📬  Resolved Ticket</text>
+  <text x="500" y="619" text-anchor="middle" fill="#c7d2fe" font-size="9">Response sent back to webhook caller</text>
+
+  <!-- ============================================ -->
+  <!-- Feedback Loop (bottom left) -->
+  <!-- ============================================ -->
+  <rect x="50" y="465" width="220" height="155" rx="10" fill="url(#fbBox)" filter="url(#shadow)"/>
+  <text x="160" y="490" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">🔄  Feedback Loop</text>
+
+  <rect x="65" y="502" width="190" height="22" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="160" y="517" text-anchor="middle" fill="#bfdbfe" font-size="10">👍  Thumbs up / 👎  Thumbs down</text>
+
+  <rect x="65" y="530" width="190" height="22" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="160" y="545" text-anchor="middle" fill="#bfdbfe" font-size="10">Smart filter: low-confidence only</text>
+
+  <rect x="65" y="558" width="190" height="22" rx="5" fill="#fff" fill-opacity="0.12"/>
+  <text x="160" y="573" text-anchor="middle" fill="#bfdbfe" font-size="10">📁  data/feedback/feedback_log.jsonl</text>
+
+  <text x="160" y="610" text-anchor="middle" fill="#93c5fd" font-size="9">Ready for DPO re-training</text>
+
+  <!-- Arrow: Feedback → Core (loop back up) -->
+  <path d="M270,545 L310,545 Q350,545 350,520 Q350,260 350,233 L370,233" stroke="#93c5fd" stroke-width="1.5" fill="none" stroke-dasharray="5,4" marker-end="url(#arrowBlue)"/>
+  <text x="340" y="460" text-anchor="middle" fill="#93c5fd" font-size="8" transform="rotate(-90,340,460)">retrain / improve</text>
+
+  <!-- ============================================ -->
+  <!-- Legend -->
+  <!-- ============================================ -->
+  <rect x="820" y="490" width="150" height="100" rx="8" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+  <text x="895" y="508" text-anchor="middle" fill="#94a3b8" font-size="10" font-weight="600">Legend</text>
+
+  <rect x="830" y="518" width="12" height="12" rx="2" fill="#6366f1"/>
+  <text x="850" y="528" fill="#94a3b8" font-size="9">User / Input</text>
+
+  <rect x="830" y="536" width="12" height="12" rx="2" fill="#f59e0b"/>
+  <text x="850" y="546" fill="#94a3b8" font-size="9">MCP Server</text>
+
+  <rect x="830" y="554" width="12" height="12" rx="2" fill="#10b981"/>
+  <text x="850" y="564" fill="#94a3b8" font-size="9">RAG Pipeline</text>
+
+  <rect x="830" y="572" width="12" height="12" rx="2" fill="#8b5cf6"/>
+  <text x="850" y="582" fill="#94a3b8" font-size="9">Fine-tuned LLM</text>
+
+  <!-- Corner labels -->
+  <rect x="20" y="68" width="75" height="20" rx="4" fill="#6366f1" fill-opacity="0.25"/>
+  <text x="57" y="82" text-anchor="middle" fill="#a5b4fc" font-size="9" font-weight="600">INPUT</text>
+
+  <rect x="20" y="465" width="75" height="20" rx="4" fill="#3b82f6" fill-opacity="0.25"/>
+  <text x="57" y="479" text-anchor="middle" fill="#93c5fd" font-size="9" font-weight="600">MLOPS</text>
+
+  <rect x="925" y="285" width="55" height="20" rx="4" fill="#ef4444" fill-opacity="0.25"/>
+  <text x="952" y="299" text-anchor="middle" fill="#fca5a5" font-size="9" font-weight="600">OPS</text>
+</svg>
