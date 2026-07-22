@@ -1,0 +1,120 @@
+name: CI — Test Suite
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install linters
+        run: pip install flake8
+
+      - name: Lint with flake8
+        run: |
+          flake8 src/ --count --max-complexity=15 --max-line-length=100 \
+            --statistics --show-source --ignore=E203,W503,E704
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11"]
+      fail-fast: false
+
+    defaults:
+      run:
+        shell: bash -eo pipefail {0}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: requirements.txt
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify imports and RAG startup
+        run: |
+          python -c "
+          import fastapi, uvicorn, pydantic, yaml, numpy, httpx
+          print('✅  Core imports OK')
+          from src.rag.retriever import KnowledgeBaseRetriever
+          kb = KnowledgeBaseRetriever()
+          method = 'embeddings' if kb.has_embeddings else 'keyword fallback'
+          print(f'✅  RAG OK: {kb.article_count()} articles ({method})')
+          "
+
+      - name: Run REST API test suite (6 endpoints)
+        run: |
+          python test_endpoints.py
+
+      - name: Validate knowledge base search
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, '.')
+          from src.rag.retriever import KnowledgeBaseRetriever
+
+          # Create retriever with default KB (15 articles)
+          kb = KnowledgeBaseRetriever()
+
+          # 1. Basic keyword search
+          results = kb.search('How to reset password?', top_k=2)
+          assert len(results) == 2, f'Expected 2, got {len(results)}'
+          assert results[0]['score'] >= results[1]['score'], 'Not sorted'
+          print(f'✅  Keyword search: top = {results[0][\"title\"]} ({results[0][\"score\"]})')
+
+          # 2. Category filter
+          billing = kb.search('payment failed', top_k=3, category_filter='billing')
+          assert len(billing) >= 1, 'Expected billing results'
+          for r in billing:
+              assert r['category'].lower() == 'billing', f'Wrong category: {r[\"category\"]}'
+          print(f'✅  Category filter: {len(billing)} billing results')
+
+          # 3. Empty query
+          assert len(kb.search('', top_k=3)) == 0, 'Empty query should return 0'
+          print('✅  Empty query handled')
+
+          # 4. Empty KB (use non-existent path)
+          import tempfile, os
+          with tempfile.TemporaryDirectory() as tmp:
+              empty_kb = KnowledgeBaseRetriever(
+                  kb_path=os.path.join(tmp, 'nonexistent.jsonl')
+              )
+              assert empty_kb.article_count() == 0, 'Expected empty KB'
+              assert len(empty_kb.search('anything')) == 0, 'Empty search should return 0'
+          print('✅  Empty KB handled')
+
+          # 5. Non-matching category filter
+          filtered = kb.search('password reset', category_filter='security')
+          assert len(filtered) <= 1, 'Expected few results for security filter'
+          print(f'✅  Non-matching filter: {len(filtered)} results')
+          "
