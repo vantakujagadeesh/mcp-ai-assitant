@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="results/figures/architecture.png" alt="MCP AI Assistant Architecture" width="700"/>
+  <em>🏗️ Architecture diagram coming soon</em>
 </p>
 
 <h1 align="center">MCP-Powered AI Assistant</h1>
