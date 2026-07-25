@@ -1,0 +1,226 @@
+{
+  "name": "Auto-Escalation: Critical Ticket → Slack Alert",
+  "pinData": {},
+  "nodes": [
+    {
+      "name": "Webhook (Escalation Inbound)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [250, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ticket-escalate",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": false
+        }
+      }
+    },
+    {
+      "name": "Extract Escalation Details",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [450, 300],
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "ticket_id",
+              "value": "={{ $json.body.ticket_id }}"
+            },
+            {
+              "name": "event",
+              "value": "={{ $json.body.event }}"
+            },
+            {
+              "name": "urgency",
+              "value": "={{ $json.body.urgency }}"
+            },
+            {
+              "name": "category",
+              "value": "={{ $json.body.category }}"
+            },
+            {
+              "name": "ticket_text",
+              "value": "={{ $json.body.ticket_text }}"
+            },
+            {
+              "name": "timestamp",
+              "value": "={{ $json.body.timestamp }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Is Critical?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [650, 300],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "cond-critical",
+              "leftValue": "={{ $json.urgency }}",
+              "rightValue": "critical",
+              "operator": {
+                "type": "string",
+                "operation": "equal"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "name": "Slack: Critical Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [850, 150],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channelId": "={{ $parameter['channelId'] || '#critical-alerts' }}",
+        "text": "=🚨 *CRITICAL TICKET ESCALATION* 🚨\n*Ticket ID:* {{ $json.ticket_id }}\n*Category:* {{ $json.category }}\n*Urgency:* {{ $json.urgency | upper }}\n*Time:* {{ $json.timestamp }}\n\n*Issue:*\n{{ $json.ticket_text }}\n\n*Action Required:* Immediate response within 15 minutes."
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack"
+        }
+      }
+    },
+    {
+      "name": "Slack: High-Urgency Notice (Non-Critical)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2,
+      "position": [850, 500],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "channelId": "={{ $parameter['channelId'] || '#support-alerts' }}",
+        "text": "=⚠️ *High-Urgency Ticket Escalated*\n*Ticket ID:* {{ $json.ticket_id }}\n*Category:* {{ $json.category }}\n*Urgency:* {{ $json.urgency | upper }}\n\n*Issue:*\n{{ $json.ticket_text }}\n\n*Action Required:* Respond within 1 hour."
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_SLACK_CREDENTIAL_ID",
+          "name": "Slack"
+        }
+      }
+    },
+    {
+      "name": "Log Escalation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1050, 300],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:8000/api/feedback_log",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "={{\n  {\n    \"ticket_id\": $json.ticket_id,\n    \"rating\": \"escalated\",\n    \"category\": $json.category,\n    \"urgency\": $json.urgency,\n    \"event\": \"auto_escalation\",\n    \"slack_channel\": $json.urgency === 'critical' ? '#critical-alerts' : '#support-alerts'\n  }\n}}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1250, 300],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"status\": \"escalated\",\n  \"ticket_id\": $json.ticket_id,\n  \"urgency\": $json.urgency,\n  \"category\": $json.category,\n  \"slack_channel\": $json.urgency === 'critical' ? '#critical-alerts' : '#support-alerts',\n  \"timestamp\": $json.timestamp\n} }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook (Escalation Inbound)": {
+      "main": [
+        [
+          {
+            "node": "Extract Escalation Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Escalation Details": {
+      "main": [
+        [
+          {
+            "node": "Is Critical?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Critical?": {
+      "main": [
+        [
+          {
+            "node": "Slack: Critical Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack: High-Urgency Notice (Non-Critical)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: Critical Alert": {
+      "main": [
+        [
+          {
+            "node": "Log Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Slack: High-Urgency Notice (Non-Critical)": {
+      "main": [
+        [
+          {
+            "node": "Log Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Escalation": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

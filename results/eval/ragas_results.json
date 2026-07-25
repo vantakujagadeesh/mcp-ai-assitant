@@ -1,0 +1,168 @@
+[
+  {
+    "timestamp": "2026-07-24T21:38:07.401989+00:00",
+    "num_samples": 3,
+    "faithfulness": 0.9797,
+    "answer_relevancy": 0.4318,
+    "context_recall": 0.9797,
+    "context_precision": 0.198,
+    "ragas_available": false,
+    "engine": "heuristic",
+    "samples": [
+      {
+        "question": "How do I reset my password?",
+        "ground_truth": "Go to the login page, click 'Forgot Password', enter your email, check your inbox for the reset link, click the link and enter a new password with at least 8 characters including one number and one special character.",
+        "retrieved_contexts": [
+          "How to reset your password: To reset your password: 1) Go to the login page and click 'Forgot Password'. 2) Enter your registered email address. 3) Check your inbox for a password reset link (valid for 24 hours). 4) Click the link and enter a new password that is at least 8 characters with one number and one special character. 5) Confirm the new password and click Save. You'll be redirected to the login page to sign in with your new password. If you don't receive the email within 5 minutes, check your spam folder or contact support for assistance.",
+          "Setting up two-factor authentication: Two-factor authentication (2FA) adds an extra layer of security to your account. To enable: 1) Go to Settings > Security. 2) Click 'Enable Two-Factor Authentication'. 3) Install an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator on your phone. 4) Scan the QR code displayed on screen. 5) Enter the 6-digit code from your authenticator app to verify setup. 6) Save your backup codes (store them somewhere safe \u2014 they are the only way to recover access if you lose your phone). Once enabled, you'll need both your password and a 6-digit code to log in.",
+          "Cancelling your subscription: To cancel your subscription: 1) Go to Settings > Billing. 2) Click 'Manage Subscription'. 3) Select 'Cancel Subscription'. 4) Choose a reason for cancellation (optional but helps us improve). 5) Confirm cancellation. Your subscription will remain active until the end of the current billing period. After cancellation, your account will be downgraded to the free tier. You'll lose access to premium features but your data will be retained for 90 days in case you reactivate. Refunds are processed within 5-7 business days for annual plans canceled within 30 days of renewal."
+        ],
+        "generated_answer": "",
+        "faithfulness": 0.9655172413793104,
+        "answer_relevancy": 0.5,
+        "context_recall": 0.9655172413793104,
+        "context_precision": 0.18064516129032257
+      },
+      {
+        "question": "What are the subscription plans and how much do they cost?",
+        "ground_truth": "Basic ($9.99/month) includes 5 projects and 10GB storage; Pro ($29.99/month) includes unlimited projects, 100GB storage, and priority support; Enterprise (custom pricing) includes everything in Pro plus dedicated support, SSO, and custom integrations.",
+        "retrieved_contexts": [
+          "Subscription plans and pricing: We offer three subscription plans: Basic ($9.99/month) includes 5 projects and 10GB storage; Pro ($29.99/month) includes unlimited projects, 100GB storage, and priority support; Enterprise (custom pricing) includes everything in Pro plus dedicated support, SSO, and custom integrations. All plans come with a 14-day free trial. You can upgrade, downgrade, or cancel at any time. Annual billing gives you a 20% discount on all plans.",
+          "Cancelling your subscription: To cancel your subscription: 1) Go to Settings > Billing. 2) Click 'Manage Subscription'. 3) Select 'Cancel Subscription'. 4) Choose a reason for cancellation (optional but helps us improve). 5) Confirm cancellation. Your subscription will remain active until the end of the current billing period. After cancellation, your account will be downgraded to the free tier. You'll lose access to premium features but your data will be retained for 90 days in case you reactivate. Refunds are processed within 5-7 business days for annual plans canceled within 30 days of renewal.",
+          "How to merge duplicate accounts: If you have multiple accounts, you can merge them by contacting support. Before requesting a merge: 1) Make sure both accounts use the same email address or verify ownership of both accounts. 2) Decide which account will be the primary (retained) account \u2014 all data from the secondary account will be transferred to the primary. 3) Note that subscription plans cannot be combined; you'll need to choose one active subscription. 4) Data from the secondary account (projects, files, settings) will be transferred within 48 hours. Merged accounts cannot be un-merged."
+        ],
+        "generated_answer": "",
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.5454545454545454,
+        "context_recall": 1.0,
+        "context_precision": 0.17006802721088435
+      },
+      {
+        "question": "My payment was declined. What should I do?",
+        "ground_truth": "Check that your card details are up to date in Billing Settings. Common causes include expired card, insufficient funds, bank declined the transaction, incorrect CVV, or card not enabled for international transactions. You can retry or add a different payment method.",
+        "retrieved_contexts": [
+          "Troubleshooting payment failures: If your payment fails, first check that your card details are up to date in Billing Settings. Common causes: expired card, insufficient funds, bank declined the transaction, incorrect CVV, or the card is not enabled for international transactions. You can retry the payment or add a different payment method. After 3 failed attempts, your account will be placed on a 7-day grace period. During this time you can still access your data but cannot create new projects. Contact your bank if issues persist.",
+          "Cancelling your subscription: To cancel your subscription: 1) Go to Settings > Billing. 2) Click 'Manage Subscription'. 3) Select 'Cancel Subscription'. 4) Choose a reason for cancellation (optional but helps us improve). 5) Confirm cancellation. Your subscription will remain active until the end of the current billing period. After cancellation, your account will be downgraded to the free tier. You'll lose access to premium features but your data will be retained for 90 days in case you reactivate. Refunds are processed within 5-7 business days for annual plans canceled within 30 days of renewal.",
+          "How to reset your password: To reset your password: 1) Go to the login page and click 'Forgot Password'. 2) Enter your registered email address. 3) Check your inbox for a password reset link (valid for 24 hours). 4) Click the link and enter a new password that is at least 8 characters with one number and one special character. 5) Confirm the new password and click Save. You'll be redirected to the login page to sign in with your new password. If you don't receive the email within 5 minutes, check your spam folder or contact support for assistance."
+        ],
+        "generated_answer": "",
+        "faithfulness": 0.9736842105263158,
+        "answer_relevancy": 0.25,
+        "context_recall": 0.9736842105263158,
+        "context_precision": 0.24342105263157895
+      }
+    ]
+  },
+  {
+    "timestamp": "2026-07-25T16:42:51.647575+00:00",
+    "num_samples": 10,
+    "faithfulness": 0.0,
+    "answer_relevancy": 0.0,
+    "context_recall": 0.0,
+    "context_precision": 0.0,
+    "ragas_available": false,
+    "engine": "heuristic",
+    "samples": [
+      {
+        "question": "How do I reset my password?",
+        "ground_truth": "Go to the login page, click 'Forgot Password', enter your email, check your inbox for the reset link, click the link and enter a new password with at least 8 characters including one number and one special character.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "What are the subscription plans and how much do they cost?",
+        "ground_truth": "Basic ($9.99/month) includes 5 projects and 10GB storage; Pro ($29.99/month) includes unlimited projects, 100GB storage, and priority support; Enterprise (custom pricing) includes everything in Pro plus dedicated support, SSO, and custom integrations.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "My payment was declined. What should I do?",
+        "ground_truth": "Check that your card details are up to date in Billing Settings. Common causes include expired card, insufficient funds, bank declined the transaction, incorrect CVV, or card not enabled for international transactions. You can retry or add a different payment method.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "How do I invite team members to my account?",
+        "ground_truth": "Go to Team Settings, click 'Invite Members', enter their email addresses, assign roles (Admin, Member, Viewer), and send the invitation. They will receive an email with a link to join your workspace.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "Can I cancel my subscription at any time?",
+        "ground_truth": "Yes, you can upgrade, downgrade, or cancel at any time. Annual billing gives you a 20% discount on all plans. All plans come with a 14-day free trial.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "How do I enable two-factor authentication?",
+        "ground_truth": "Go to Security Settings, click 'Enable 2FA', scan the QR code with an authenticator app like Google Authenticator or Authy, enter the verification code, and save your backup codes in a secure location.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "What should I do if I suspect my account has been compromised?",
+        "ground_truth": "Immediately change your password, enable two-factor authentication if not already enabled, review your active sessions and revoke any unrecognized ones, check your account activity log for suspicious actions, and contact support immediately.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "How do I export my data from the platform?",
+        "ground_truth": "Go to Account Settings, click 'Export Data', select the data you want to export (projects, documents, analytics), choose your preferred format (CSV, JSON, or PDF), and click Export. You will receive an email with a download link.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "What integrations are supported?",
+        "ground_truth": "We support integrations with Slack, GitHub, Jira, Trello, Google Drive, Dropbox, Zapier, and over 200 other services via our API. Enterprise plans include custom integrations and dedicated support.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      },
+      {
+        "question": "How do I create and manage API keys?",
+        "ground_truth": "Go to Developer Settings, click 'Create API Key', name your key, set permissions (read-only, read-write, or admin), and copy the generated key. Store it securely as it won't be shown again. You can revoke or rotate keys at any time.",
+        "retrieved_contexts": [],
+        "generated_answer": "",
+        "faithfulness": 0.0,
+        "answer_relevancy": 0.0,
+        "context_recall": 0.0,
+        "context_precision": 0.0
+      }
+    ]
+  }
+]

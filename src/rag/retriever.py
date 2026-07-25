@@ -1,8 +1,17 @@
 """
 RAG Knowledge Base Retriever
 
-Searches support articles using sentence-transformers embeddings + cosine similarity.
-Falls back to simple keyword matching when sentence-transformers is unavailable.
+Searches support articles using hybrid search (dense + sparse vectors).
+Supports three backends in order of preference:
+
+1. **QdrantVectorStore** — production-grade vector DB with hybrid search
+2. **InMemoryVectorStore** — in-memory fallback with dense + sparse scoring
+3. **Legacy embedding search** — original sentence-transformers + cosine similarity
+4. **Keyword fallback** — simple TF overlap (when nothing else is available)
+
+When a vector store is provided, the retriever seeds it from the JSONL
+knowledge base file on startup, then delegates all ``search()`` calls
+via ``hybrid_search()``.
 """
 
 import json
@@ -36,6 +45,20 @@ try:
 except ImportError:
     _NUMPY_AVAILABLE = False
 
+# ---------------------------------------------------------------------------
+# Vector store (Phase 3 upgrade)
+# ---------------------------------------------------------------------------
+try:
+    from src.rag.vector_store import (
+        create_vector_store,
+        SearchResult,
+        chunk_article,
+    )
+except ImportError:
+    create_vector_store = None  # type: ignore
+    SearchResult = None  # type: ignore
+    chunk_article = lambda a, **kw: []  # type: ignore
+
 
 # ---------------------------------------------------------------------------
 # Default path for the seed KB
@@ -53,10 +76,13 @@ DEFAULT_KB_PATH = os.path.join(
 class KnowledgeBaseRetriever:
     """Retrieve relevant support articles from a knowledge base.
 
-    Uses dense embeddings (sentence-transformers) with cosine similarity
-    when available, falling back to TF-IDF-like keyword scoring when only
-    ``numpy`` is installed, and finally to pure Python keyword matching
-    when neither is available.
+    Supports four search tiers:
+    - **Vector store** (Qdrant or in-memory): hybrid dense + sparse search
+    - **Legacy embedding**: sentence-transformers + cosine similarity
+    - **Keyword fallback**: simple TF overlap
+
+    When a ``vector_store`` is provided on init, the retriever seeds it
+    from the JSONL file and delegates all searches to it.
     """
 
     def __init__(
@@ -64,6 +90,7 @@ class KnowledgeBaseRetriever:
         kb_path: Optional[str] = None,
         embedding_model: str = "all-MiniLM-L6-v2",
         top_k: int = 5,
+        vector_store: Optional[Any] = None,
     ) -> None:
         self.kb_path = kb_path or DEFAULT_KB_PATH
         self.top_k = top_k
@@ -71,9 +98,14 @@ class KnowledgeBaseRetriever:
         self._embeddings: Optional[list] = None
         self._model: Optional[Any] = None
         self._model_name = embedding_model
+        self._vector_store = vector_store
 
         self._load_articles()
         self._build_index()
+
+        # Seed the vector store is NOT done here — it must be called
+        # separately via ``await retriever.seed_vector_store()`` from
+        # an async context (e.g. the FastAPI startup handler).
 
     # ------------------------------------------------------------------
     # Article loading
@@ -96,6 +128,47 @@ class KnowledgeBaseRetriever:
                         logger.warning("Skipping malformed KB line: %s", exc)
         self._articles = articles
         logger.info("Loaded %d knowledge base articles", len(articles))
+
+    # ------------------------------------------------------------------
+    # Vector store seeding (must be called from an async context)
+    # ------------------------------------------------------------------
+    async def seed_vector_store(self) -> int:
+        """Chunk all articles and upsert them into the vector store.
+
+        Must be called from an async context (e.g. FastAPI startup event).
+        Returns the number of chunks upserted, or 0 if no vector store
+        is configured.
+        """
+        if self._vector_store is None or not self._articles:
+            return 0
+
+        all_points = []
+        for article in self._articles:
+            chunks = chunk_article(article)
+            for chunk in chunks:
+                all_points.append({
+                    "id": chunk["id"],
+                    "payload": chunk,
+                })
+
+        if not all_points:
+            return 0
+
+        total = 0
+        # Upsert in batches to avoid overwhelming the store
+        batch_size = 50
+        for i in range(0, len(all_points), batch_size):
+            batch = all_points[i:i + batch_size]
+            count = await self._vector_store.upsert(batch)
+            total += count
+
+        logger.info(
+            "Seeded vector store with %d chunks from %d articles%s",
+            total,
+            len(self._articles),
+            f" via {type(self._vector_store).__name__}" if self._vector_store else "",
+        )
+        return total
 
     # ------------------------------------------------------------------
     # Index building
@@ -181,6 +254,12 @@ class KnowledgeBaseRetriever:
     ) -> List[Dict[str, Any]]:
         """Search the knowledge base and return the top-k matching articles.
 
+        Uses the configured backend in order of preference:
+        1. Vector store (Qdrant) — hybrid dense + sparse BM25
+        2. In-memory vector store — hybrid dense + sparse
+        3. Legacy embedding — sentence-transformers + cosine similarity
+        4. Keyword fallback — simple TF overlap
+
         Parameters
         ----------
         query : str
@@ -197,6 +276,11 @@ class KnowledgeBaseRetriever:
             Each dict contains the article fields plus a ``score`` key.
         """
         k = top_k or self.top_k
+
+        # -- Try vector store first (hybrid dense + sparse) -------------
+        if self._vector_store is not None:
+            return self._vector_store_search(query, k, category_filter)
+
         if not self._articles:
             return []
 
@@ -238,6 +322,49 @@ class KnowledgeBaseRetriever:
 
         # -- keyword fallback -------------------------------------------
         return self._keyword_search(query, candidates, k)
+
+    # ------------------------------------------------------------------
+    # Vector store search (async executed synchronously)
+    # ------------------------------------------------------------------
+    def _vector_store_search(
+        self,
+        query: str,
+        top_k: int,
+        category_filter: Optional[str] = None,
+    ) -> List[Dict[str, Any]]:
+        """Run a hybrid search against the vector store.
+
+        Because the vector store API is async, we use ``asyncio.run()``
+        to bridge the sync ``search()`` interface.
+        """
+        if self._vector_store is None:
+            return []
+
+        import asyncio
+
+        async def _do() -> List[Dict[str, Any]]:
+            results = await self._vector_store.hybrid_search(
+                query_text=query,
+                top_k=top_k,
+                category_filter=category_filter,
+            )
+            # Convert SearchResult objects back to the original dict format
+            output = []
+            for r in results:
+                # The payload contains the original article fields (title, content, etc.)
+                article = dict(r.payload)
+                article["score"] = r.score
+                article["_search_source"] = r.source
+                output.append(article)
+            return output
+
+        try:
+            return asyncio.run(_do())
+        except Exception as exc:
+            logger.warning("Vector store search failed (%s), falling back to keyword", exc)
+            if self._articles:
+                return self._keyword_search(query, self._articles, top_k)
+            return []
 
     # ------------------------------------------------------------------
     # Keyword fallback
@@ -288,13 +415,41 @@ class KnowledgeBaseRetriever:
     # ------------------------------------------------------------------
     @property
     def has_embeddings(self) -> bool:
-        """True if the dense embedding model is loaded and ready."""
+        """True if the dense embedding model is loaded and ready.
+
+        Returns ``True`` when a vector store is connected (it handles
+        embeddings internally) or when the legacy embedding model is loaded.
+        """
+        if self._vector_store is not None and getattr(self._vector_store, "is_connected", False):
+            return True
         return self._model is not None and self._embeddings is not None
+
+    @property
+    def vector_store(self) -> Optional[Any]:
+        """The underlying vector store (Qdrant or in-memory)."""
+        return self._vector_store
+
+    @property
+    def vector_store_type(self) -> str:
+        """Human-readable name of the active vector store backend."""
+        if self._vector_store is None:
+            return "none"
+        return type(self._vector_store).__name__
 
     def article_count(self) -> int:
         return len(self._articles)
 
+    def chunk_count(self) -> int:
+        """Return the number of chunks currently stored in the vector store.
+        Falls back to the article count if no vector store is available."""
+        return len(self._articles)
+
     def reload(self) -> None:
-        """Reload articles and rebuild the index."""
+        """Reload articles and rebuild the index.
+
+        Note: Re-seeding the vector store is NOT done here because this
+        method is synchronous. Call ``await retriever.seed_vector_store()``
+        separately from an async context if needed.
+        """
         self._load_articles()
         self._build_index()

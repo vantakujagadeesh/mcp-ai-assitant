@@ -78,6 +78,10 @@ jobs:
         run: |
           python test_endpoints.py
 
+      - name: RAG Evaluation (heuristic fallback)
+        run: |
+          python src/eval/ragas_eval.py --verbose
+
       - name: Validate knowledge base search
         run: |
           python -c "

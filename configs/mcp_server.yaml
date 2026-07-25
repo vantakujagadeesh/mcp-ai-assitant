@@ -19,3 +19,97 @@ rag:
   # kb_path: null   → defaults to data/knowledge_base/support_articles.jsonl
   embedding_model: "all-MiniLM-L6-v2"
   top_k: 5
+
+# ---- Vector Database (NEW: Phase 3 upgrade — Qdrant hybrid search) ----
+vector_db:
+  enabled: true              # set to true to use Qdrant; falls back to in-memory if unavailable
+  provider: "qdrant"         # "qdrant" for production, "in-memory" for dev/testing
+  host: "localhost"
+  port: 6333
+  grpc_port: 6334
+  prefer_grpc: false
+  api_key: null              # set if your Qdrant instance requires auth
+  embedding_model: "all-MiniLM-L6-v2"
+  embedding_size: 384        # must match the embedding model's output dimension
+  collection_name: "support_articles"
+  connect_timeout: 3.0       # seconds before falling back to in-memory
+
+# ---- Authentication (NEW feature) ----
+auth:
+  enabled: true
+  public_paths:
+    - "/health"
+    - "/docs"
+    - "/openapi.json"
+    - "/redoc"
+    - "/admin/dashboard"
+    - "/metrics"              # Prometheus scraping (no auth)
+  # API keys are loaded from environment variables:
+  #   MCP_API_KEY_ADMIN=sk-your-admin-key:admin
+  #   MCP_API_KEY_SERVICE=sk-your-service-key:standard
+  # A default key "sk-default-key" (standard tier) is auto-created if none are set.
+
+# ---- Rate Limiting (NEW feature) ----
+rate_limiting:
+  enabled: true
+  redis_enabled: true        # using Redis for distributed rate limiting
+  limits:
+    admin: [1000, 60]        # 1000 requests per 60 seconds
+    standard: [100, 60]      # 100 requests per 60 seconds
+    anonymous: [20, 60]      # 20 requests per 60 seconds
+
+# ---- Conversation Memory / Sessions (NEW feature) ----
+conversation:
+  redis_enabled: true        # using Redis for persistent conversations
+  persistence_path: "data/conversations/conversations.json"  # fallback file persistence
+
+# ---- Caching (NEW feature) ----
+cache:
+  redis_enabled: true        # using Redis for shared caching across instances
+  max_size: 1000             # max items for fallback in-memory LRU cache
+  default_ttl: 300           # default TTL in seconds (5 minutes)
+
+# ---- n8n Webhook Integration (optional, for auto-escalation) ----
+n8n:
+  enabled: true              # set to true to enable auto-escalation
+  base_url: "http://localhost:5678"  # your n8n instance URL
+  webhook_path: "/webhook/"         # n8n webhook path
+  api_key: null              # set if your n8n webhooks require auth
+  timeout_seconds: 10.0      # webhook request timeout
+
+# ---- Prometheus Metrics (NEW feature, for monitoring) ----
+prometheus:
+  enabled: true              # expose /metrics endpoint with Prometheus metrics
+  # No additional client-side config needed — metrics are collected by the
+  # Prometheus server (see monitoring/prometheus/prometheus.yml)
+  # Grafana dashboard is at monitoring/grafana/dashboards/api_monitoring.json
+
+# ---- Guardrails (Phase 4: PII Masking & Safety / Injection Detection) ----
+guardrails:
+  # PII Masking (presidio or regex fallback)
+  pii:
+    enabled: true
+    use_presidio: true        # set to false to always use regex fallback
+  # Safety / Injection Guardrails (NeMo Guardrails or heuristic fallback)
+  safety:
+    enabled: true
+    use_nemo: true            # set to false to always use heuristic fallback
+    block_on_high_confidence: true
+    injection_threshold: 0.7  # confidence level (0-1) to block input
+
+# ---- DPO Training Pipeline (automated preference optimisation) ----
+dpo_training:
+  enabled: true
+  celery_enabled: true         # set to true when Celery worker is running
+  min_pairs_for_training: 50   # minimum preference pairs to trigger fine-tuning
+  cooldown_hours: 24           # minimum hours between training runs
+  feedback_path: "data/feedback/feedback_log.jsonl"
+  pairs_path: "data/training/dpo_pairs.jsonl"
+  celery_broker_url: "redis://localhost:6379/1"
+
+# ---- Redis Configuration (optional, for production) ----
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  password: null             # set via REDIS_PASSWORD env var in production

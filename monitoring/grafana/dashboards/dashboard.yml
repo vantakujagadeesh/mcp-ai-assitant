@@ -1,0 +1,22 @@
+# Grafana Dashboard Provisioning Configuration
+# ============================================
+# Auto-loads the MCP AI Assistant monitoring dashboard on startup.
+#
+# Place this in the Grafana provisioning directory:
+#   monitoring/grafana/dashboards/dashboard.yml
+#
+# Grafana auto-loads it on startup when mounted at:
+#   /etc/grafana/provisioning/dashboards/
+
+apiVersion: 1
+
+providers:
+  - name: "MCP AI Assistant"
+    orgId: 1
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/provisioning/dashboards
+      foldersFromFilesStructure: false

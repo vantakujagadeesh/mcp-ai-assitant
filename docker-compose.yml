@@ -1,0 +1,118 @@
+# ==============================================================
+# MCP AI Assistant — Docker Compose
+# ==============================================================
+# Runs the FastAPI REST API server with optional Redis for
+# caching, rate limiting, and conversation persistence.
+# ==============================================================
+
+version: "3.9"
+
+services:
+  # ---- Main API Server ----
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-assistant-api
+    ports:
+      - "8000:8000"
+    environment:
+      # API Key Authentication
+      # Generate a key: python -c "from src.mcp_server.auth import APIKeyStore; print(APIKeyStore.generate_key())"
+      # Uncomment to set custom API keys:
+      # MCP_API_KEY_ADMIN: "sk-your-admin-key:admin"
+      # MCP_API_KEY_SERVICE: "sk-your-service-key:standard"
+      PYTHONUNBUFFERED: "1"
+      PYTHONDONTWRITEBYTECODE: "1"
+    volumes:
+      # Persist feedback and conversation data
+      - ./data:/app/data
+      - ./results:/app/results
+    depends_on:
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # ---- Redis (for caching, rate limiting, and conversation persistence) ----
+  redis:
+    image: redis:7-alpine
+    container_name: mcp-assistant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---- Prometheus (metrics collection) ----
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: mcp-assistant-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  # ---- Qdrant Vector Database (NEW: Phase 3 — hybrid search) ----
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: mcp-assistant-qdrant
+    ports:
+      - "6333:6333"   # REST API + gRPC
+      - "6334:6334"   # gRPC (optional)
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ---- Grafana (visualization) ----
+  grafana:
+    image: grafana/grafana:latest
+    container_name: mcp-assistant-grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+  prometheus_data:
+  qdrant_data:
+  grafana_data:

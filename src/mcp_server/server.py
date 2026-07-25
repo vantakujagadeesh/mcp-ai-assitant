@@ -53,6 +53,33 @@ def load_config(config_path: Optional[str] = None) -> Dict[str, Any]:
             "embedding_model": "all-MiniLM-L6-v2",
             "top_k": 5,
         },
+        "vector_db": {
+            "enabled": False,
+            "provider": "in-memory",
+            "host": "localhost",
+            "port": 6333,
+            "embedding_model": "all-MiniLM-L6-v2",
+            "embedding_size": 384,
+            "collection_name": "support_articles",
+        },
+        "guardrails": {
+            "pii": {
+                "enabled": True,
+                "use_presidio": True,
+            },
+            "safety": {
+                "enabled": True,
+                "use_nemo": True,
+                "block_on_high_confidence": True,
+                "injection_threshold": 0.7,
+            },
+        },
+        "dpo_training": {
+            "enabled": True,
+            "celery_enabled": False,
+            "min_pairs_for_training": 50,
+            "cooldown_hours": 24,
+        },
     }
 
     if not os.path.exists(path):
